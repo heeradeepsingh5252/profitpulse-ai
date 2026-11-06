@@ -1,0 +1,3 @@
+sku,name,category,unit_price,unit_cost,reorder_level,unit_of_measure
+SKU-NEW-001,Sample Product,Accessories,799.00,420.00,20,unit
+SKU-NEW-002,Sample Wholesale Pack,Office Supplies,1499.00,900.00,10,pack

@@ -1,0 +1,48 @@
+# Secrets and environment variables
+.env
+.env.*
+!.env.example
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Node.js and frontend builds
+node_modules/
+dist/
+frontend/dist/
+
+# Local databases and vector storage
+*.db
+*.sqlite
+*.sqlite3
+chroma/
+chroma_db/
+
+# Operating system and editor files
+.DS_Store
+.idea/
+
+# Logs
+*.log
+
+# Local backups
+*.backup
+*.before_*
+*.pre_*
+
+# Temporary patch instructions
+APPLY_*.txt
+*_PATCH.txt
+
+# Local development notes and temporary test fixtures
+DAY3_UPDATE_INSTRUCTIONS.txt
+DAY5_SETUP.md
+DAY5_TYPESCRIPT_FIX_README.md
+examples/knowledge/temporary_delete_test.md

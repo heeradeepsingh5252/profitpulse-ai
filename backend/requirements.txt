@@ -1,0 +1,18 @@
+fastapi==0.115.12
+uvicorn[standard]==0.34.0
+psycopg[binary,pool]==3.2.6
+pydantic==2.12.5
+python-multipart==0.0.20
+sqlglot==26.6.0
+pytest==8.3.5
+httpx==0.28.1
+
+# LangGraph agent stack: versions used by the ProfitPulse Day 3 Groq build.
+langgraph==1.2.20
+langchain-core==1.7.6
+langchain-groq==1.1.3
+
+# Day 4 retrieval and MCP dependencies.
+chromadb==1.5.9
+pypdf==6.21.4
+mcp==1.30.0

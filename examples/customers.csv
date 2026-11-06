@@ -1,0 +1,3 @@
+customer_code,name,email,phone,city,state,region,customer_type
+C-NEW-001,Sample Retail Customer,retail.customer@example.test,+919999000001,Hyderabad,Telangana,South,retail
+C-NEW-002,Sample Wholesale Buyer,wholesale.buyer@example.test,+919999000002,Warangal,Telangana,South,wholesale
