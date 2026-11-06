@@ -14,8 +14,8 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="ProfitPulse AI API",
-    version="0.2.0-day2",
-    description="Day 2 financial intelligence engine for SME business analytics.",
+    version="1.0.0",
+    description="Demo API for ProfitPulse AI SME business analytics, financial intelligence, RAG and supply-chain workflows.",
     lifespan=lifespan,
 )
 
