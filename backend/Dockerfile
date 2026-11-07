@@ -7,4 +7,4 @@ COPY src ./src
 COPY scripts ./scripts
 COPY tests ./tests
 EXPOSE 8000
-CMD ["uvicorn", "profitpulse.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["sh", "-c", "uvicorn profitpulse.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
