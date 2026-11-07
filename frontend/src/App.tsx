@@ -61,7 +61,7 @@ import {
 } from 'recharts';
 
 const DEMO_ORGANIZATION_ID = '11111111-1111-4111-8111-111111111111';
-const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '').replace(/\\/+$/, '');
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/+$/, '');
 const DEFAULT_START = '2026-08-01';
 const DEFAULT_END = '2026-10-31';
 const INVENTORY_SNAPSHOT_DATE = '2026-11-01';
