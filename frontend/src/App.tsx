@@ -61,6 +61,7 @@ import {
 } from 'recharts';
 
 const DEMO_ORGANIZATION_ID = '11111111-1111-4111-8111-111111111111';
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '').replace(/\\/+$/, '');
 const DEFAULT_START = '2026-08-01';
 const DEFAULT_END = '2026-10-31';
 const INVENTORY_SNAPSHOT_DATE = '2026-11-01';
@@ -108,7 +109,7 @@ async function apiRequest<T>(path: string, init: RequestInit = {}): Promise<T> {
   if (!(init.body instanceof FormData) && init.body && !headers.has('Content-Type')) {
     headers.set('Content-Type', 'application/json');
   }
-  const response = await fetch(path, { ...init, headers });
+  const response = await fetch(`${API_BASE_URL}${path}`, { ...init, headers });
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) {
     const detail = typeof payload.detail === 'string' ? payload.detail : `Request failed (${response.status})`;
