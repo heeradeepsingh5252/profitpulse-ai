@@ -1,0 +1,4 @@
+snapshot_date,sku,product_name,category,stock_on_hand,reorder_level,unit_cost
+2026-11-09,SHIRT-001,Oxford Shirt,Menswear,8,12,620
+2026-11-09,DRESS-014,Floral Dress,Womenswear,34,10,850
+2026-11-09,JEANS-008,Slim Fit Jeans,Denim,5,8,780
