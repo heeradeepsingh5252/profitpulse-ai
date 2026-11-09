@@ -403,7 +403,7 @@ function RetailIntelligencePage() {
   };
 
   const money = (value: number) => formatCurrency(value, 'INR');
-  return <div>
+  return <div className="retail-intelligence">
     <div className="page-heading">
       <div><div className="eyebrow"><span className="eyebrow-line" /> RETAIL NETWORK INTELLIGENCE</div>
         <h1>Multi-store intelligence</h1>
@@ -419,7 +419,7 @@ function RetailIntelligencePage() {
       <div className="metric-card"><div className="metric-label">Gross profit</div><div className="metric-value">{money(report?.company.total_gross_profit ?? 0)}</div></div>
       <div className="metric-card"><div className="metric-label">Stores with low stock</div><div className="metric-value">{report?.company.stores_with_low_stock ?? 0}</div></div>
     </div>
-    <div className="content-grid" style={{gridTemplateColumns:'minmax(0,1fr) minmax(0,1fr)', gap:16, marginBottom:16}}>
+    <div className="content-grid" style={{display:'grid', gridTemplateColumns:'repeat(2,minmax(0,1fr))', gap:16, marginBottom:16}}>
       <section className="panel panel-padding">
         <div className="panel-header"><div><h3>Add a store</h3><p>Configure the monthly revenue threshold used for expansion screening.</p></div></div>
         <form onSubmit={createStore} style={{display:'grid', gap:9}}>
@@ -454,7 +454,7 @@ function RetailIntelligencePage() {
         {!report?.store_ranking?.length && <p style={{color:'#8a96a6',fontSize:11}}>No store data yet. Add stores and upload their CSV records to generate reports.</p>}
       </div>
     </section>
-    <div className="content-grid" style={{gridTemplateColumns:'minmax(0,1fr) minmax(0,1fr)', gap:16}}>
+    <div className="content-grid" style={{display:'grid', gridTemplateColumns:'repeat(2,minmax(0,1fr))', gap:16}}>
       <section className="panel panel-padding">
         <div className="panel-header"><div><h3>Expansion screening</h3><p>Threshold-based candidates for owner review, not automatic site recommendations.</p></div></div>
         {(report?.expansion_candidates || []).map(s=><div key={s.store_name} style={{padding:'9px 0',borderBottom:'1px solid #edf0f4'}}><strong style={{fontSize:11}}>{s.store_name} · {s.city}</strong><p style={{fontSize:10,color:'#8290a1',margin:'4px 0'}}>{s.reason}</p></div>)}
