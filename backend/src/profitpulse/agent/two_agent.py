@@ -229,7 +229,6 @@ def run_two_agent_analysis(
         )
 
         provider, model_name, chat_model = build_chat_model()
-        tool_names = {tool.name for tool in tools}
         handoff = {
             "user_question": question,
             "period": data_report["period"],
@@ -244,6 +243,11 @@ def run_two_agent_analysis(
             "and company-knowledge sources. Do not repeat calculations that are already present unless a tool is needed "
             "to verify them. Never invent production metrics, machine utilisation, wastage, capacity, supplier causes, "
             "cash-flow amounts or savings when those are not in the evidence. State when production data is not connected. "
+            "Use only predefined read-only tools; never write or execute arbitrary SQL. For additional company-specific facts, "
+            "call the relevant tool and cite the tool/evidence or document filename and page. Do not assert a cause from correlation. "
+            "Label unverified explanations as hypotheses and state what source would validate them. Never imply a purchase order, "
+            "supplier communication, production change or other action was executed. Management must approve all actions. "
+            "If the current prototype lacks production telemetry, say those KPIs cannot yet be assessed. "
             "Answer in clear English with concise headings: What the data says; Business interpretation; Recommended actions; "
             "Data limitations. Do not expose private chain-of-thought."
         )
