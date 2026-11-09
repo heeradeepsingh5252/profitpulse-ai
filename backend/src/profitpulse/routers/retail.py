@@ -181,7 +181,7 @@ def _store_report(conn, org_id: str, store, start_date: date | None = None, end_
                   COALESCE(SUM(quantity),0) AS units_sold,
                   COUNT(*) AS line_count
            FROM retail_sales WHERE organization_id=%s AND store_id=%s
-             AND (%s IS NULL OR sale_date >= %s) AND (%s IS NULL OR sale_date <= %s)""",
+             AND (%s::date IS NULL OR sale_date >= %s::date) AND (%s::date IS NULL OR sale_date <= %s::date)""",
         (org_id, store_id, start_date, start_date, end_date, end_date),
     ).fetchone()
     inventory = conn.execute(
@@ -198,7 +198,7 @@ def _store_report(conn, org_id: str, store, start_date: date | None = None, end_
                   SUM(quantity*unit_price) AS revenue,
                   SUM(quantity*(unit_price-unit_cost)) AS gross_profit
            FROM retail_sales WHERE organization_id=%s AND store_id=%s
-             AND (%s IS NULL OR sale_date >= %s) AND (%s IS NULL OR sale_date <= %s)
+             AND (%s::date IS NULL OR sale_date >= %s::date) AND (%s::date IS NULL OR sale_date <= %s::date)
            GROUP BY sku,product_name ORDER BY revenue DESC LIMIT 5""",
         (org_id, store_id, start_date, start_date, end_date, end_date),
     ).fetchall()
@@ -257,6 +257,7 @@ def headquarters_report(start_date: date | None = Query(default=None), end_date:
         ).fetchall()
         reports = [_store_report(conn, org_id, store, start, end) for store in stores]
         ranked = sorted(reports, key=lambda r: r["data_analyst"]["gross_profit"], reverse=True)
+        revenue_ranked = sorted(reports, key=lambda r: r["data_analyst"]["revenue"], reverse=True)
         low_stock_stores = [r for r in reports if r["data_analyst"]["low_stock_skus"] > 0]
         expansion = []
         for store in stores:
@@ -295,6 +296,7 @@ def headquarters_report(start_date: date | None = Query(default=None), end_date:
             "low_stock_sku_count": sum(r["data_analyst"]["low_stock_skus"] for r in reports),
         },
         "highest_gross_profit_store": ranked[0]["store"] if ranked else None,
+        "highest_revenue_store": revenue_ranked[0]["store"] if revenue_ranked else None,
         "store_ranking": [{
             **r["store"], "revenue": r["data_analyst"]["revenue"],
             "gross_profit": r["data_analyst"]["gross_profit"],
