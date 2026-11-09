@@ -214,7 +214,6 @@ def run_two_agent_analysis(
         )
 
         provider, model_name, chat_model = build_chat_model()
-        graph, tools = build_agent_graph(chat_model, organization_id)
         tool_names = {tool.name for tool in tools}
         handoff = {
             "user_question": question,
@@ -233,8 +232,10 @@ def run_two_agent_analysis(
             "Answer in clear English with concise headings: What the data says; Business interpretation; Recommended actions; "
             "Data limitations. Do not expose private chain-of-thought."
         )
+        graph, tools = build_agent_graph(chat_model, organization_id, system_prompt=instruction)
+        tool_names = {tool.name for tool in tools}
         result = graph.invoke(
-            {"messages": [HumanMessage(content=instruction + "\n\n" + json.dumps(handoff, ensure_ascii=False, default=str))]},
+            {"messages": [HumanMessage(content=json.dumps(handoff, ensure_ascii=False, default=str))]},
             config={"recursion_limit": max(8, max_tool_rounds * 2 + 4)},
         )
 
