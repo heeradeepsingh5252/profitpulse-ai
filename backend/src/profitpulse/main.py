@@ -43,6 +43,7 @@ if allowed_origins:
 DEMO_READ_ONLY = os.getenv("DEMO_READ_ONLY", "false").lower() in {"1", "true", "yes"}
 READ_ONLY_POST_PATHS = {
     "/api/v1/agent/ask",
+    "/api/v1/intelligence/analyse",
     "/api/v1/knowledge/search",
 }
 
