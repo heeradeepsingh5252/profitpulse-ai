@@ -95,14 +95,13 @@ type AgentResult = { answer: string; provider?: string; model?: string; tools_us
 type ChatMessage = { id: string; role: 'assistant' | 'user'; content: string; result?: AgentResult; error?: boolean };
 
 const navItems: Array<{ key: PageKey; label: string; icon: typeof LayoutDashboard }> = [
-  { key: 'overview', label: 'Overview', icon: LayoutDashboard },
+  { key: 'overview', label: 'Command centre', icon: LayoutDashboard },
   { key: 'intelligence', label: 'AI Intelligence', icon: Sparkles },
   { key: 'analyst', label: 'Ask ProfitPulse', icon: MessageSquareText },
-  { key: 'knowledge', label: 'Knowledge base', icon: FileText },
-  { key: 'products', label: 'Products & regions', icon: Package },
+  { key: 'knowledge', label: 'Data & knowledge', icon: FileText },
+  { key: 'products', label: 'Products & sales', icon: Package },
   { key: 'inventory', label: 'Inventory', icon: Boxes },
   { key: 'supply_chain', label: 'Supply chain', icon: Truck },
-  { key: 'ipo_readiness', label: 'IPO readiness', icon: BriefcaseBusiness },
 ];
 
 async function apiRequest<T>(path: string, init: RequestInit = {}): Promise<T> {
@@ -253,7 +252,7 @@ function App() {
 
         <div className="workspace-switcher">
           <div className="workspace-icon"><Building2 size={17} /></div>
-          <div className="workspace-copy"><strong>{organizationName}</strong><span>Demo workspace</span></div>
+          <div className="workspace-copy"><strong>{organizationName}</strong><span>Synthetic sample workspace</span></div>
           <ChevronDown size={15} className="muted-icon" />
         </div>
 
@@ -293,7 +292,7 @@ function App() {
             <div className="breadcrumb"><span>Workspace</span><span className="breadcrumb-slash">/</span><strong>{pageTitle}</strong></div>
           </div>
           <div className="topbar-actions">
-            <div className="live-status"><span className="pulse-dot" />Live data</div>
+            <div className="live-status"><span className="pulse-dot" />Demo data</div>
             <button className="icon-button refresh-button" title="Refresh dashboard" onClick={() => void loadDashboard(true)} disabled={refreshing}>{refreshing ? <LoaderCircle className="spin" size={17} /> : <RefreshCw size={17} />}</button>
             <div className="top-avatar">HS</div>
           </div>
@@ -350,9 +349,9 @@ function OverviewPage(props: OverviewProps) {
       <div className="date-filter"><div className="date-field"><label htmlFor="start-date">FROM</label><input id="start-date" type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} max={endDate} /></div><span className="date-separator">to</span><div className="date-field"><label htmlFor="end-date">TO</label><input id="end-date" type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} min={startDate} /></div><span className="filter-icon"><Filter size={15} /></span></div>
     </div>
 
-    <div className="insight-banner"><div className="insight-icon"><Sparkles size={18} /></div><div className="insight-copy"><strong>Two specialist agents. One business briefing.</strong><span>The Data Analyst verifies the numbers. The Business Analyst turns findings into practical priorities.</span></div><button className="banner-action" onClick={onIntelligence}>Run intelligence workflow <ArrowRight size={15} /></button><button className="text-action overview-chat-action" onClick={onAsk}>Ask a question</button></div>
+    <div className="insight-banner"><div className="insight-icon"><Sparkles size={18} /></div><div className="insight-copy"><strong>Two specialist agents. One business briefing.</strong><span>The Data Analyst verifies the numbers. The Business Analyst turns findings into practical priorities.</span><span className="demo-data-note">Manufacturing-focused preview using synthetic wholesale/retail sample records. Production and machine telemetry are not connected.</span></div><button className="banner-action" onClick={onIntelligence}>Run intelligence workflow <ArrowRight size={15} /></button><button className="text-action overview-chat-action" onClick={onAsk}>Ask a question</button></div>
 
-    <div className="section-heading"><div><h2>Performance snapshot</h2><span>Selected reporting period · {new Date(`${startDate}T00:00:00`).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })} – {new Date(`${endDate}T00:00:00`).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span></div><span className="section-caption"><span className="pulse-dot" />Updated from live API</span></div>
+    <div className="section-heading"><div><h2>Performance snapshot</h2><span>Selected reporting period · {new Date(`${startDate}T00:00:00`).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })} – {new Date(`${endDate}T00:00:00`).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span></div><span className="section-caption"><span className="pulse-dot" />Synthetic sample records · API connected</span></div>
 
     <div className="metric-grid">
       <MetricCard label="Net revenue" value={formatCurrency(metrics.net_revenue, currency, true)} icon={<Wallet size={18} />} tone="blue" detail={revenueChange === null ? 'Period total' : `${revenueChange >= 0 ? '+' : ''}${revenueChange.toFixed(1)}% vs prior month`} trend={revenueChange === null ? 'neutral' : revenueChange >= 0 ? 'positive' : 'negative'} loading={loading} />
