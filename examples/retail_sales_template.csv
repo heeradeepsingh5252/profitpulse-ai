@@ -1,0 +1,4 @@
+sale_date,sku,product_name,category,quantity,unit_price,unit_cost
+2026-09-01,SHIRT-001,Oxford Shirt,Menswear,4,1299,620
+2026-09-02,DRESS-014,Floral Dress,Womenswear,2,1899,850
+2026-09-03,JEANS-008,Slim Fit Jeans,Denim,3,1599,780
