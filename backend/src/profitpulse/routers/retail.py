@@ -173,15 +173,16 @@ async def upload_inventory(store_id: UUID, file: UploadFile = File(...), org_id:
     return {"status": "completed", "store_id": str(store_id), "accepted_rows": len(rows), "file_name": file.filename}
 
 
-def _store_report(conn, org_id: str, store):
+def _store_report(conn, org_id: str, store, start_date: date | None = None, end_date: date | None = None):
     store_id = str(store["id"])
     sales = conn.execute(
         """SELECT COALESCE(SUM(quantity*unit_price),0) AS revenue,
                   COALESCE(SUM(quantity*unit_cost),0) AS cogs,
                   COALESCE(SUM(quantity),0) AS units_sold,
                   COUNT(*) AS line_count
-           FROM retail_sales WHERE organization_id=%s AND store_id=%s""",
-        (org_id, store_id),
+           FROM retail_sales WHERE organization_id=%s AND store_id=%s
+             AND (%s IS NULL OR sale_date >= %s) AND (%s IS NULL OR sale_date <= %s)""",
+        (org_id, store_id, start_date, start_date, end_date, end_date),
     ).fetchone()
     inventory = conn.execute(
         """SELECT COUNT(*) FILTER (WHERE stock_on_hand <= reorder_level) AS low_stock_skus,
@@ -197,8 +198,9 @@ def _store_report(conn, org_id: str, store):
                   SUM(quantity*unit_price) AS revenue,
                   SUM(quantity*(unit_price-unit_cost)) AS gross_profit
            FROM retail_sales WHERE organization_id=%s AND store_id=%s
+             AND (%s IS NULL OR sale_date >= %s) AND (%s IS NULL OR sale_date <= %s)
            GROUP BY sku,product_name ORDER BY revenue DESC LIMIT 5""",
-        (org_id, store_id),
+        (org_id, store_id, start_date, start_date, end_date, end_date),
     ).fetchall()
     revenue = Decimal(str(sales["revenue"] or 0))
     cogs = Decimal(str(sales["cogs"] or 0))
@@ -234,10 +236,12 @@ def _store_report(conn, org_id: str, store):
 
 
 @router.get("/stores/{store_id}/report")
-def get_store_report(store_id: UUID, org_id: str = Depends(retail_tenant_id)):
+def get_store_report(store_id: UUID, start_date: date | None = Query(default=None), end_date: date | None = Query(default=None), org_id: str = Depends(retail_tenant_id)):
+    if start_date and end_date and start_date > end_date:
+        raise HTTPException(422, "start_date must be on or before end_date")
     with organization_connection(org_id) as conn:
         store = _store_or_404(conn, org_id, store_id)
-        return _store_report(conn, org_id, store)
+        return _store_report(conn, org_id, store, start_date, end_date)
 
 
 @router.get("/headquarters/report")
@@ -251,7 +255,7 @@ def headquarters_report(start_date: date | None = Query(default=None), end_date:
             "SELECT id,store_code,store_name,city,monthly_revenue_threshold FROM retail_stores WHERE organization_id=%s ORDER BY store_code",
             (org_id,),
         ).fetchall()
-        reports = [_store_report(conn, org_id, store) for store in stores]
+        reports = [_store_report(conn, org_id, store, start, end) for store in stores]
         ranked = sorted(reports, key=lambda r: r["data_analyst"]["gross_profit"], reverse=True)
         low_stock_stores = [r for r in reports if r["data_analyst"]["low_stock_skus"] > 0]
         expansion = []
@@ -264,11 +268,13 @@ def headquarters_report(start_date: date | None = Query(default=None), end_date:
             ).fetchall()
             threshold = Decimal(str(store["monthly_revenue_threshold"] or 0))
             consecutive = 0
+            expected_month = end.replace(day=1)
             for month_row in monthly:
-                if threshold > 0 and Decimal(str(month_row["revenue"] or 0)) >= threshold:
-                    consecutive += 1
-                else:
+                month_value = month_row["month"]
+                if month_value != expected_month or threshold <= 0 or Decimal(str(month_row["revenue"] or 0)) < threshold:
                     break
+                consecutive += 1
+                expected_month = (expected_month - timedelta(days=1)).replace(day=1)
             if threshold > 0 and consecutive >= 3:
                 expansion.append({
                     "store_code": store["store_code"], "store_name": store["store_name"], "city": store["city"],
