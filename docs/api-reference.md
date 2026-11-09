@@ -55,12 +55,26 @@ curl -H 'X-Organization-ID: 11111111-1111-4111-8111-111111111111' \
   'http://localhost:8000/api/v1/financial/monthly-trend?start_date=2026-08-01&end_date=2026-10-31'
 ```
 
-## AI agent
+## AI agent and two-stage intelligence
 
 - `POST /api/v1/agent/ask`
 - `GET /api/v1/agent/capabilities`
 
-The agent uses a Groq-backed LangGraph workflow and predefined tools. Model access depends on configured provider credentials, network access and account limits.
+The single chat assistant uses a Groq-backed LangGraph workflow and predefined read-only tools. Model access depends on configured provider credentials, network access and account limits.
+
+- `POST /api/v1/intelligence/analyse`
+
+The two-stage endpoint first builds a deterministic Data Analyst report from tenant-scoped ledger, product and inventory records, then hands that evidence to the Business Analyst role for interpretation. Example:
+
+```bash
+curl -X POST \\
+  -H 'Content-Type: application/json' \\
+  -H 'X-Organization-ID: 11111111-1111-4111-8111-111111111111' \\
+  -d '{"question":"Review manufacturing performance and recommend priorities","start_date":"2026-08-01","end_date":"2026-10-31"}' \\
+  http://localhost:8000/api/v1/intelligence/analyse
+```
+
+The route is read-only and uses the configured LLM provider for the Business Analyst stage. It does not infer factory KPIs such as machine utilisation, scrap or yield unless those datasets are connected. The returned result includes separate Data Analyst and Business Analyst sections.
 
 ## Knowledge and RAG
 
