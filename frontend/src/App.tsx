@@ -66,7 +66,7 @@ const DEFAULT_START = '2026-08-01';
 const DEFAULT_END = '2026-10-31';
 const INVENTORY_SNAPSHOT_DATE = '2026-11-01';
 
-type PageKey = 'overview' | 'analyst' | 'knowledge' | 'products' | 'inventory' | 'supply_chain' | 'ipo_readiness';
+type PageKey = 'overview' | 'analyst' | 'knowledge' | 'products' | 'inventory' | 'supply_chain' | 'ipo_readiness' | 'retail';
 type JsonObject = Record<string, unknown>;
 type FinancialMetrics = {
   gross_sales?: number;
@@ -101,6 +101,7 @@ const navItems: Array<{ key: PageKey; label: string; icon: typeof LayoutDashboar
   { key: 'inventory', label: 'Inventory', icon: Boxes },
   { key: 'supply_chain', label: 'Supply chain', icon: Truck },
   { key: 'ipo_readiness', label: 'IPO readiness', icon: BriefcaseBusiness },
+  { key: 'retail', label: 'Multi-store intelligence', icon: Boxes },
 ];
 
 async function apiRequest<T>(path: string, init: RequestInit = {}): Promise<T> {
@@ -312,11 +313,164 @@ function App() {
           {activePage === 'inventory' && <InventoryPage inventory={inventory} currency={currency} loading={loading} alertCount={alertCount} />}
           {activePage === 'supply_chain' && <SupplyChainPage />}
           {activePage === 'ipo_readiness' && <IpoReadinessPage months={months} metrics={metrics} currency={currency} />}
+          {activePage === 'retail' && <RetailIntelligencePage />}
           <footer className="footer"><span>ProfitPulse AI <span className="footer-dot">·</span> Decision intelligence for growing businesses</span><span>DEMO ENVIRONMENT <span className="footer-dot">·</span> Not audited financial advice</span></footer>
         </div>
       </main>
     </div>
   );
+}
+
+
+type RetailStore = { id: string; store_code: string; store_name: string; city: string; monthly_revenue_threshold: number; sales_rows?: number; latest_inventory_date?: string | null };
+type RetailReport = {
+  company: { total_revenue: number; total_gross_profit: number; gross_margin_pct: number; stores_with_low_stock: number; low_stock_sku_count: number };
+  store_count: number;
+  store_ranking: Array<{ code: string; name: string; city: string; revenue: number; gross_profit: number; gross_margin_pct: number; low_stock_skus: number }>;
+  expansion_candidates: Array<{ store_name: string; city: string; monthly_revenue_threshold: number; consecutive_months_above_threshold: number; reason: string }>;
+  important_note: string;
+};
+
+function RetailIntelligencePage() {
+  const [stores, setStores] = useState<RetailStore[]>([]);
+  const [report, setReport] = useState<RetailReport | null>(null);
+  const [selectedStore, setSelectedStore] = useState('');
+  const [storeCode, setStoreCode] = useState('');
+  const [storeName, setStoreName] = useState('');
+  const [city, setCity] = useState('');
+  const [threshold, setThreshold] = useState('750000');
+  const [salesFile, setSalesFile] = useState<File | null>(null);
+  const [inventoryFile, setInventoryFile] = useState<File | null>(null);
+  const [recipient, setRecipient] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
+
+  const loadRetail = useCallback(async () => {
+    setBusy(true); setError('');
+    try {
+      const [storeData, reportData] = await Promise.all([
+        apiRequest<{ stores: RetailStore[] }>('/api/v1/retail/stores'),
+        apiRequest<RetailReport>('/api/v1/retail/headquarters/report'),
+      ]);
+      setStores(storeData.stores || []);
+      setReport(reportData);
+      if (!selectedStore && storeData.stores?.length) setSelectedStore(storeData.stores[0].id);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not load multi-store data. Apply the database migration first.');
+    } finally { setBusy(false); }
+  }, [selectedStore]);
+
+  useEffect(() => { void loadRetail(); }, [loadRetail]);
+
+  const createStore = async (event: FormEvent) => {
+    event.preventDefault(); setBusy(true); setError(''); setMessage('');
+    try {
+      await apiRequest('/api/v1/retail/stores', { method: 'POST', body: JSON.stringify({
+        store_code: storeCode, store_name: storeName, city, monthly_revenue_threshold: Number(threshold || 0),
+      })});
+      setStoreCode(''); setStoreName(''); setCity('');
+      setMessage('Store created. Select it below to upload its sales and inventory files.');
+      await loadRetail();
+    } catch (e) { setError(e instanceof Error ? e.message : 'Store creation failed.'); }
+    finally { setBusy(false); }
+  };
+
+  const uploadFile = async (kind: 'sales' | 'inventory') => {
+    const file = kind === 'sales' ? salesFile : inventoryFile;
+    if (!selectedStore || !file) { setError('Select a store and a CSV file first.'); return; }
+    setBusy(true); setError(''); setMessage('');
+    try {
+      const form = new FormData(); form.append('file', file);
+      const path = kind === 'sales' ? 'upload-sales' : 'upload-inventory';
+      const result = await apiRequest<{ accepted_rows: number }>(`/api/v1/retail/stores/${selectedStore}/${path}`, { method: 'POST', body: form });
+      setMessage(`${kind === 'sales' ? 'Sales' : 'Inventory'} upload complete: ${result.accepted_rows} rows accepted.`);
+      if (kind === 'sales') setSalesFile(null); else setInventoryFile(null);
+      await loadRetail();
+    } catch (e) { setError(e instanceof Error ? e.message : 'Upload failed.'); }
+    finally { setBusy(false); }
+  };
+
+  const sendEmail = async (event: FormEvent) => {
+    event.preventDefault(); setBusy(true); setError(''); setMessage('');
+    try {
+      const result = await apiRequest<{ status: string; recipient: string }>('/api/v1/retail/headquarters/email', {
+        method: 'POST', body: JSON.stringify({ recipient }),
+      });
+      setMessage(`Headquarters report emailed to ${result.recipient}.`);
+    } catch (e) { setError(e instanceof Error ? e.message : 'Email delivery failed.'); }
+    finally { setBusy(false); }
+  };
+
+  const money = (value: number) => formatCurrency(value, 'INR');
+  return <div>
+    <div className="page-heading">
+      <div><div className="eyebrow"><span className="eyebrow-line" /> RETAIL NETWORK INTELLIGENCE</div>
+        <h1>Multi-store intelligence</h1>
+        <p>Upload each store's sales and stock records. Store analysts prepare local reports; headquarters consolidates the network view.</p>
+      </div>
+      <button className="secondary-button" onClick={() => void loadRetail()} disabled={busy}><RefreshCw size={14} /> Refresh reports</button>
+    </div>
+    {error && <div className="alert alert-warning"><CircleHelp size={16} /><span>{error}</span></div>}
+    {message && <div className="alert alert-info"><Check size={16} /><span>{message}</span></div>}
+    <div className="metric-grid" style={{marginBottom:18}}>
+      <div className="metric-card"><div className="metric-label">Stores connected</div><div className="metric-value">{report?.store_count ?? stores.length}</div></div>
+      <div className="metric-card"><div className="metric-label">Network revenue</div><div className="metric-value">{money(report?.company.total_revenue ?? 0)}</div></div>
+      <div className="metric-card"><div className="metric-label">Gross profit</div><div className="metric-value">{money(report?.company.total_gross_profit ?? 0)}</div></div>
+      <div className="metric-card"><div className="metric-label">Stores with low stock</div><div className="metric-value">{report?.company.stores_with_low_stock ?? 0}</div></div>
+    </div>
+    <div className="content-grid" style={{gridTemplateColumns:'minmax(0,1fr) minmax(0,1fr)', gap:16, marginBottom:16}}>
+      <section className="panel panel-padding">
+        <div className="panel-header"><div><h3>Add a store</h3><p>Configure the monthly revenue threshold used for expansion screening.</p></div></div>
+        <form onSubmit={createStore} style={{display:'grid', gap:9}}>
+          <input aria-label="Store code" placeholder="Store code (e.g. ST01)" value={storeCode} onChange={e=>setStoreCode(e.target.value)} required />
+          <input aria-label="Store name" placeholder="Store name" value={storeName} onChange={e=>setStoreName(e.target.value)} required />
+          <input aria-label="City" placeholder="City / location" value={city} onChange={e=>setCity(e.target.value)} required />
+          <input aria-label="Monthly revenue threshold" type="number" min="0" placeholder="Monthly revenue threshold (INR)" value={threshold} onChange={e=>setThreshold(e.target.value)} />
+          <button className="primary-button" type="submit" disabled={busy}><Plus size={14}/> Add store</button>
+        </form>
+      </section>
+      <section className="panel panel-padding">
+        <div className="panel-header"><div><h3>Manual data upload</h3><p>Upload a separate sales CSV and inventory snapshot for the selected store.</p></div></div>
+        <select aria-label="Select store" value={selectedStore} onChange={e=>setSelectedStore(e.target.value)} style={{width:'100%', marginBottom:12}}>
+          <option value="">Select a store</option>{stores.map(s=><option key={s.id} value={s.id}>{s.store_code} · {s.store_name}</option>)}
+        </select>
+        <label style={{display:'block', fontSize:11, marginBottom:5}}>Sales records CSV</label>
+        <input type="file" accept=".csv,text/csv" onChange={e=>setSalesFile(e.target.files?.[0] || null)} />
+        <button className="secondary-button" style={{margin:'8px 0 14px'}} onClick={()=>void uploadFile('sales')} disabled={busy || !salesFile || !selectedStore}><UploadCloud size={14}/> Upload sales</button>
+        <label style={{display:'block', fontSize:11, marginBottom:5}}>Inventory snapshot CSV</label>
+        <input type="file" accept=".csv,text/csv" onChange={e=>setInventoryFile(e.target.files?.[0] || null)} />
+        <button className="secondary-button" style={{marginTop:8}} onClick={()=>void uploadFile('inventory')} disabled={busy || !inventoryFile || !selectedStore}><UploadCloud size={14}/> Upload inventory</button>
+        <p style={{fontSize:10, color:'#8592a4', marginTop:12}}>Templates: examples/retail_sales_template.csv and examples/retail_inventory_template.csv</p>
+      </section>
+    </div>
+    <section className="panel panel-padding" style={{marginBottom:16}}>
+      <div className="panel-header"><div><h3>Headquarters report</h3><p>Central agent ranks stores by gross profit and flags stock risks.</p></div><span className="panel-chip">{stores.length} stores</span></div>
+      <div style={{overflowX:'auto'}}>
+        <table style={{width:'100%', borderCollapse:'collapse', fontSize:11}}>
+          <thead><tr>{['Store','City','Revenue','Gross profit','Margin','Low-stock SKUs'].map(x=><th key={x} style={{textAlign:'left',padding:'10px 8px',color:'#8190a3',borderBottom:'1px solid #edf0f4'}}>{x}</th>)}</tr></thead>
+          <tbody>{(report?.store_ranking || []).map((s,i)=><tr key={s.code}><td style={{padding:'10px 8px',borderBottom:'1px solid #f0f2f5'}}><strong>{i+1}. {s.name}</strong><div style={{color:'#98a2af'}}>{s.code}</div></td><td>{s.city}</td><td>{money(s.revenue)}</td><td>{money(s.gross_profit)}</td><td>{s.gross_margin_pct.toFixed(1)}%</td><td>{s.low_stock_skus}</td></tr>)}</tbody>
+        </table>
+        {!report?.store_ranking?.length && <p style={{color:'#8a96a6',fontSize:11}}>No store data yet. Add stores and upload their CSV records to generate reports.</p>}
+      </div>
+    </section>
+    <div className="content-grid" style={{gridTemplateColumns:'minmax(0,1fr) minmax(0,1fr)', gap:16}}>
+      <section className="panel panel-padding">
+        <div className="panel-header"><div><h3>Expansion screening</h3><p>Threshold-based candidates for owner review, not automatic site recommendations.</p></div></div>
+        {(report?.expansion_candidates || []).map(s=><div key={s.store_name} style={{padding:'9px 0',borderBottom:'1px solid #edf0f4'}}><strong style={{fontSize:11}}>{s.store_name} · {s.city}</strong><p style={{fontSize:10,color:'#8290a1',margin:'4px 0'}}>{s.reason}</p></div>)}
+        {!report?.expansion_candidates?.length && <p style={{fontSize:11,color:'#8a96a6'}}>No store has crossed its configured threshold for three consecutive reported months.</p>}
+      </section>
+      <section className="panel panel-padding">
+        <div className="panel-header"><div><h3>Email owner report</h3><p>Send the latest consolidated headquarters report.</p></div></div>
+        <form onSubmit={sendEmail} style={{display:'grid',gap:9}}>
+          <input type="email" aria-label="Owner email address" placeholder="owner@company.com" value={recipient} onChange={e=>setRecipient(e.target.value)} required />
+          <button className="primary-button" type="submit" disabled={busy}><Send size={14}/> Send consolidated email</button>
+        </form>
+        <p style={{fontSize:10,color:'#8592a4',marginTop:10}}>SMTP settings must be configured on the backend. Scheduled daily delivery will be added after the first manual demo run.</p>
+      </section>
+    </div>
+    <p style={{fontSize:10,color:'#8592a4',marginTop:14}}>{report?.important_note}</p>
+  </div>;
 }
 
 type OverviewProps = {
