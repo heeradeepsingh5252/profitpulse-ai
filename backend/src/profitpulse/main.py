@@ -7,6 +7,7 @@ from starlette.responses import JSONResponse
 
 from profitpulse.db import close_pool
 from profitpulse.routers.api import router
+from profitpulse.routers.retail import router as retail_router
 
 
 @asynccontextmanager
@@ -17,12 +18,11 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="ProfitPulse AI API",
-    version="1.0.0",
-    description="Demo API for ProfitPulse AI SME business analytics, financial intelligence, RAG and supply-chain workflows.",
+    version="1.1.0",
+    description="ProfitPulse AI SME analytics, multi-store retail intelligence, RAG and supply-chain workflows.",
     lifespan=lifespan,
 )
 
-# Public portfolio demo: allow only the deployed frontend origin(s).
 allowed_origins = [
     origin.strip()
     for origin in os.getenv("CORS_ORIGINS", "").split(",")
@@ -38,8 +38,6 @@ if allowed_origins:
         max_age=600,
     )
 
-# Read-only demo mode keeps public visitors from changing the shared synthetic dataset.
-# The AI Analyst and RAG search are POST endpoints but do not mutate business records.
 DEMO_READ_ONLY = os.getenv("DEMO_READ_ONLY", "false").lower() in {"1", "true", "yes"}
 READ_ONLY_POST_PATHS = {
     "/api/v1/agent/ask",
@@ -76,3 +74,4 @@ def database_health():
 
 
 app.include_router(router)
+app.include_router(retail_router)
