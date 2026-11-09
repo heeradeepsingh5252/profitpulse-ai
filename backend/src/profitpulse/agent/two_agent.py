@@ -98,13 +98,20 @@ def build_data_analyst_report(
             trend_parts.append(f"net revenue changed {revenue_change:+.2f}%")
         if expense_change is not None:
             trend_parts.append(f"operating expenses changed {expense_change:+.2f}%")
+        try:
+            prev_month = date.fromisoformat(str(previous.get("month"))[:10])
+            latest_month = date.fromisoformat(str(latest.get("month"))[:10])
+            consecutive = (latest_month.year * 12 + latest_month.month) - (prev_month.year * 12 + prev_month.month) == 1
+        except (TypeError, ValueError):
+            consecutive = False
+        comparison_label = "Like-for-like consecutive monthly comparison" if consecutive else "Comparison of the two latest months with returned ledger activity; they are not necessarily consecutive"
         if trend_parts:
             findings.append({
                 "id": "monthly-trend",
                 "title": "Latest month movement",
                 "detail": f"From {previous.get('month')} to {latest.get('month')}, " + " and ".join(trend_parts) + ".",
                 "severity": "info",
-                "evidence": "Like-for-like comparison of the two latest monthly ledger periods returned.",
+                "evidence": comparison_label + ".",
             })
 
     ranked_products = sorted(products, key=lambda item: _number(item.get("gross_profit")), reverse=True)
@@ -132,16 +139,24 @@ def build_data_analyst_report(
             })
 
     reorder_items = [item for item in inventory if item.get("reorder_alert") is True]
-    findings.append({
-        "id": "inventory-reorder",
-        "title": "Reorder-level inventory",
-        "detail": (
+    if inventory:
+        inventory_detail = (
             f"{len(reorder_items)} SKU(s) are at or below their configured reorder level."
             if reorder_items
             else "No SKU was at or below its configured reorder level in the returned inventory snapshot."
-        ),
-        "severity": "watch" if reorder_items else "info",
-        "evidence": "Latest available inventory snapshot on or before the selected period end date.",
+        )
+        inventory_severity = "watch" if reorder_items else "info"
+        inventory_evidence = "Latest available inventory snapshot on or before the selected period end date."
+    else:
+        inventory_detail = "No inventory rows were returned; stock position could not be assessed for this period."
+        inventory_severity = "watch"
+        inventory_evidence = "No qualifying inventory snapshot was available on or before the selected period end date."
+    findings.append({
+        "id": "inventory-reorder",
+        "title": "Reorder-level inventory",
+        "detail": inventory_detail,
+        "severity": inventory_severity,
+        "evidence": inventory_evidence,
     })
 
     snapshot_dates = sorted({
