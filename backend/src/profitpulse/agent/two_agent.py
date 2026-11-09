@@ -15,6 +15,7 @@ from langchain_core.messages import AIMessage, ToolMessage
 
 from profitpulse.agent.graph import AgentExecutionError, _content_to_text, build_agent_graph
 from profitpulse.agent.llm import LLMConfigurationError, build_chat_model
+from profitpulse.agent.prompts import build_system_prompt
 from profitpulse.analytics import load_inventory_health, load_product_performance
 from profitpulse.db import organization_connection
 from profitpulse.financial import load_financial_summary, load_monthly_financial_trend
@@ -234,10 +235,11 @@ def run_two_agent_analysis(
             "period": data_report["period"],
             "verified_data_analyst_report": data_report,
         }
-        instruction = (
+        instruction = build_system_prompt() + "\n\n" + (
             "You are now acting as the ProfitPulse AI Business Analyst, the second specialist in a two-agent workflow. "
             "The Data Analyst has completed deterministic calculations from tenant-scoped records. "
-            "Treat the attached report as verified analytical evidence. Interpret it for a manufacturing SME owner, "
+            "Treat the attached deterministic Data Analyst report as verified evidence and quote its metric values and basis exactly. "
+            "For additional numeric facts not in that report, use the existing read-only tools. Interpret it for a manufacturing SME owner, "
             "explain business implications, separate facts from hypotheses, and give prioritised practical next steps. "
             "You may use your existing read-only tools for additional evidence from financial, operational, supply-chain "
             "and company-knowledge sources. Do not repeat calculations that are already present unless a tool is needed "
