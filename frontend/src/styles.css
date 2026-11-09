@@ -694,3 +694,5 @@ td strong { display: block; color: #46546a; font-size: 9px; font-weight: 600; }
   .intelligence-dates input { width: 106px; }
   .intelligence-command-top span { line-height: 1.5; }
 }
+
+.demo-data-note { color: #a47745 !important; font-size: 9px !important; line-height: 1.45; }
