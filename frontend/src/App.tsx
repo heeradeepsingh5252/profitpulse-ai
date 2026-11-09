@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import IntelligencePage from './IntelligencePage';
 import {
   Activity,
   ArrowDownRight,
@@ -66,7 +67,7 @@ const DEFAULT_START = '2026-08-01';
 const DEFAULT_END = '2026-10-31';
 const INVENTORY_SNAPSHOT_DATE = '2026-11-01';
 
-type PageKey = 'overview' | 'analyst' | 'knowledge' | 'products' | 'inventory' | 'supply_chain' | 'ipo_readiness';
+type PageKey = 'overview' | 'intelligence' | 'analyst' | 'knowledge' | 'products' | 'inventory' | 'supply_chain' | 'ipo_readiness';
 type JsonObject = Record<string, unknown>;
 type FinancialMetrics = {
   gross_sales?: number;
@@ -95,7 +96,8 @@ type ChatMessage = { id: string; role: 'assistant' | 'user'; content: string; re
 
 const navItems: Array<{ key: PageKey; label: string; icon: typeof LayoutDashboard }> = [
   { key: 'overview', label: 'Overview', icon: LayoutDashboard },
-  { key: 'analyst', label: 'AI Analyst', icon: MessageSquareText },
+  { key: 'intelligence', label: 'AI Intelligence', icon: Sparkles },
+  { key: 'analyst', label: 'Ask ProfitPulse', icon: MessageSquareText },
   { key: 'knowledge', label: 'Knowledge base', icon: FileText },
   { key: 'products', label: 'Products & regions', icon: Package },
   { key: 'inventory', label: 'Inventory', icon: Boxes },
@@ -304,8 +306,9 @@ function App() {
             loading={loading} currency={currency} metrics={metrics} months={months}
             balance={balance} businessCounts={businessCounts} expenseRatio={expenseRatio} revenueChange={revenueChange}
             expenseChange={expenseChange} alertCount={alertCount} startDate={startDate} endDate={endDate}
-            setStartDate={setStartDate} setEndDate={setEndDate} onAsk={() => setPage('analyst')} onKnowledge={() => setPage('knowledge')}
+            setStartDate={setStartDate} setEndDate={setEndDate} onAsk={() => setPage('analyst')} onIntelligence={() => setPage('intelligence')} onKnowledge={() => setPage('knowledge')}
           />}
+          {activePage === 'intelligence' && <IntelligencePage />}
           {activePage === 'analyst' && <AnalystPage />}
           {activePage === 'knowledge' && <KnowledgePage documents={documents} onRefresh={refreshDocuments} onNotice={setNotice} />}
           {activePage === 'products' && <ProductsPage products={products} regions={regions} currency={currency} loading={loading} />}
@@ -323,11 +326,11 @@ type OverviewProps = {
   loading: boolean; currency: string; metrics: FinancialMetrics; months: MonthMetric[];
   balance: JsonObject; businessCounts: JsonObject; expenseRatio?: number; revenueChange: number | null; expenseChange: number | null;
   alertCount: number; startDate: string; endDate: string; setStartDate: (value: string) => void; setEndDate: (value: string) => void;
-  onAsk: () => void; onKnowledge: () => void;
+  onAsk: () => void; onIntelligence: () => void; onKnowledge: () => void;
 };
 
 function OverviewPage(props: OverviewProps) {
-  const { loading, currency, metrics, months, balance, businessCounts, expenseRatio, revenueChange, expenseChange, alertCount, startDate, endDate, setStartDate, setEndDate, onAsk, onKnowledge } = props;
+  const { loading, currency, metrics, months, balance, businessCounts, expenseRatio, revenueChange, expenseChange, alertCount, startDate, endDate, setStartDate, setEndDate, onAsk, onIntelligence, onKnowledge } = props;
   const chartData = months.map((month) => ({
     label: monthLabel(month.month),
     revenue: numberValue(month.net_revenue),
@@ -347,7 +350,7 @@ function OverviewPage(props: OverviewProps) {
       <div className="date-filter"><div className="date-field"><label htmlFor="start-date">FROM</label><input id="start-date" type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} max={endDate} /></div><span className="date-separator">to</span><div className="date-field"><label htmlFor="end-date">TO</label><input id="end-date" type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} min={startDate} /></div><span className="filter-icon"><Filter size={15} /></span></div>
     </div>
 
-    <div className="insight-banner"><div className="insight-icon"><Sparkles size={18} /></div><div className="insight-copy"><strong>Your AI business analyst is ready.</strong><span>Ask questions across your financial ledger, operations and uploaded company documents.</span></div><button className="banner-action" onClick={onAsk}>Ask ProfitPulse <ArrowRight size={15} /></button></div>
+    <div className="insight-banner"><div className="insight-icon"><Sparkles size={18} /></div><div className="insight-copy"><strong>Two specialist agents. One business briefing.</strong><span>The Data Analyst verifies the numbers. The Business Analyst turns findings into practical priorities.</span></div><button className="banner-action" onClick={onIntelligence}>Run intelligence workflow <ArrowRight size={15} /></button><button className="text-action overview-chat-action" onClick={onAsk}>Ask a question</button></div>
 
     <div className="section-heading"><div><h2>Performance snapshot</h2><span>Selected reporting period · {new Date(`${startDate}T00:00:00`).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })} – {new Date(`${endDate}T00:00:00`).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span></div><span className="section-caption"><span className="pulse-dot" />Updated from live API</span></div>
 
@@ -424,7 +427,7 @@ function EmptyState({ title, detail }: { title: string; detail: string }) { retu
 function PulseStat({ icon, label, value, alert = false }: { icon: ReactNode; label: string; value: string; alert?: boolean }) { return <div className="pulse-stat"><span className={`pulse-stat-icon ${alert ? 'pulse-alert' : ''}`}>{icon}</span><div><strong>{value}</strong><span>{label}</span></div></div>; }
 
 function AnalystPage() {
-  const [messages, setMessages] = useState<ChatMessage[]>([{ id: 'welcome', role: 'assistant', content: 'I’m your ProfitPulse business analyst. Ask me about revenue, margins, expenses, inventory, or your uploaded company documents. I’ll use connected tools and show the evidence behind the answer.' }]);
+  const [messages, setMessages] = useState<ChatMessage[]>([{ id: 'welcome', role: 'assistant', content: 'I’m ProfitPulse, your business intelligence assistant. Ask about revenue, margins, expenses, inventory, supply chain or your company documents. I’ll investigate with connected read-only tools and show the evidence behind the answer.' }]);
   const [question, setQuestion] = useState('');
   const [sending, setSending] = useState(false);
   const [maxToolRounds] = useState(6);
@@ -459,10 +462,10 @@ function AnalystPage() {
   };
 
   return <div className="analyst-layout">
-    <div className="page-heading"><div><div className="eyebrow">PROFITPULSE INTELLIGENCE <span className="eyebrow-line" /></div><h1>Ask better business questions.</h1><p>Your AI analyst can investigate structured data and retrieve evidence from your company documents.</p></div></div>
+    <div className="page-heading"><div><div className="eyebrow">PROFITPULSE INTELLIGENCE <span className="eyebrow-line" /></div><h1>Ask better business questions.</h1><p>Ask questions across financial performance, inventory, supply chain and your company knowledge base.</p></div></div>
     <div className="analyst-workspace">
       <div className="chat-column">
-        <div className="chat-header"><div className="chat-agent-icon"><Bot size={21} /></div><div><strong>ProfitPulse Business Analyst</strong><span><i className="online-dot" /> Groq · LangGraph tool-calling</span></div><span className="chat-secure"><ShieldCheck size={14} /> Read-only tools</span></div>
+        <div className="chat-header"><div className="chat-agent-icon"><Bot size={21} /></div><div><strong>ProfitPulse Assistant</strong><span><i className="online-dot" /> Groq · LangGraph tool-calling</span></div><span className="chat-secure"><ShieldCheck size={14} /> Read-only tools</span></div>
         <div className="chat-messages">
           {messages.map((message) => <div key={message.id} className={`message-row ${message.role === 'user' ? 'message-user' : ''}`}>
             {message.role === 'assistant' && <div className="message-avatar"><Sparkles size={15} /></div>}
