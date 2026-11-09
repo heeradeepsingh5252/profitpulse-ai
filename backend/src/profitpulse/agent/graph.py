@@ -15,12 +15,12 @@ class AgentExecutionError(RuntimeError):
     pass
 
 
-def build_agent_graph(chat_model, organization_id: str):
+def build_agent_graph(chat_model, organization_id: str, system_prompt: str | None = None):
     tools = (build_business_tools(organization_id) + build_knowledge_tools(organization_id) + build_supply_chain_tools(organization_id))
     model_with_tools = chat_model.bind_tools(tools)
 
     def call_model(state: MessagesState) -> dict[str, list[Any]]:
-        messages = [SystemMessage(content=build_system_prompt()), *state["messages"]]
+        messages = [SystemMessage(content=system_prompt or build_system_prompt()), *state["messages"]]
         response = model_with_tools.invoke(messages)
         return {"messages": [response]}
 

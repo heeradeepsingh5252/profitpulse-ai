@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import IntelligencePage from './IntelligencePage';
 import {
   Activity,
   ArrowDownRight,
@@ -66,7 +67,7 @@ const DEFAULT_START = '2026-08-01';
 const DEFAULT_END = '2026-10-31';
 const INVENTORY_SNAPSHOT_DATE = '2026-11-01';
 
-type PageKey = 'overview' | 'analyst' | 'knowledge' | 'products' | 'inventory' | 'supply_chain' | 'ipo_readiness';
+type PageKey = 'overview' | 'intelligence' | 'analyst' | 'knowledge' | 'products' | 'inventory' | 'supply_chain' | 'ipo_readiness';
 type JsonObject = Record<string, unknown>;
 type FinancialMetrics = {
   gross_sales?: number;
@@ -94,13 +95,13 @@ type AgentResult = { answer: string; provider?: string; model?: string; tools_us
 type ChatMessage = { id: string; role: 'assistant' | 'user'; content: string; result?: AgentResult; error?: boolean };
 
 const navItems: Array<{ key: PageKey; label: string; icon: typeof LayoutDashboard }> = [
-  { key: 'overview', label: 'Overview', icon: LayoutDashboard },
-  { key: 'analyst', label: 'AI Analyst', icon: MessageSquareText },
-  { key: 'knowledge', label: 'Knowledge base', icon: FileText },
-  { key: 'products', label: 'Products & regions', icon: Package },
+  { key: 'overview', label: 'Command centre', icon: LayoutDashboard },
+  { key: 'intelligence', label: 'AI Intelligence', icon: Sparkles },
+  { key: 'analyst', label: 'Ask ProfitPulse', icon: MessageSquareText },
+  { key: 'knowledge', label: 'Data & knowledge', icon: FileText },
+  { key: 'products', label: 'Products & sales', icon: Package },
   { key: 'inventory', label: 'Inventory', icon: Boxes },
   { key: 'supply_chain', label: 'Supply chain', icon: Truck },
-  { key: 'ipo_readiness', label: 'IPO readiness', icon: BriefcaseBusiness },
 ];
 
 async function apiRequest<T>(path: string, init: RequestInit = {}): Promise<T> {
@@ -251,7 +252,7 @@ function App() {
 
         <div className="workspace-switcher">
           <div className="workspace-icon"><Building2 size={17} /></div>
-          <div className="workspace-copy"><strong>{organizationName}</strong><span>Demo workspace</span></div>
+          <div className="workspace-copy"><strong>{organizationName}</strong><span>Synthetic sample workspace</span></div>
           <ChevronDown size={15} className="muted-icon" />
         </div>
 
@@ -291,7 +292,7 @@ function App() {
             <div className="breadcrumb"><span>Workspace</span><span className="breadcrumb-slash">/</span><strong>{pageTitle}</strong></div>
           </div>
           <div className="topbar-actions">
-            <div className="live-status"><span className="pulse-dot" />Live data</div>
+            <div className="live-status"><span className="pulse-dot" />Demo data</div>
             <button className="icon-button refresh-button" title="Refresh dashboard" onClick={() => void loadDashboard(true)} disabled={refreshing}>{refreshing ? <LoaderCircle className="spin" size={17} /> : <RefreshCw size={17} />}</button>
             <div className="top-avatar">HS</div>
           </div>
@@ -304,8 +305,9 @@ function App() {
             loading={loading} currency={currency} metrics={metrics} months={months}
             balance={balance} businessCounts={businessCounts} expenseRatio={expenseRatio} revenueChange={revenueChange}
             expenseChange={expenseChange} alertCount={alertCount} startDate={startDate} endDate={endDate}
-            setStartDate={setStartDate} setEndDate={setEndDate} onAsk={() => setPage('analyst')} onKnowledge={() => setPage('knowledge')}
+            setStartDate={setStartDate} setEndDate={setEndDate} onAsk={() => setPage('analyst')} onIntelligence={() => setPage('intelligence')} onKnowledge={() => setPage('knowledge')}
           />}
+          {activePage === 'intelligence' && <IntelligencePage />}
           {activePage === 'analyst' && <AnalystPage />}
           {activePage === 'knowledge' && <KnowledgePage documents={documents} onRefresh={refreshDocuments} onNotice={setNotice} />}
           {activePage === 'products' && <ProductsPage products={products} regions={regions} currency={currency} loading={loading} />}
@@ -323,11 +325,11 @@ type OverviewProps = {
   loading: boolean; currency: string; metrics: FinancialMetrics; months: MonthMetric[];
   balance: JsonObject; businessCounts: JsonObject; expenseRatio?: number; revenueChange: number | null; expenseChange: number | null;
   alertCount: number; startDate: string; endDate: string; setStartDate: (value: string) => void; setEndDate: (value: string) => void;
-  onAsk: () => void; onKnowledge: () => void;
+  onAsk: () => void; onIntelligence: () => void; onKnowledge: () => void;
 };
 
 function OverviewPage(props: OverviewProps) {
-  const { loading, currency, metrics, months, balance, businessCounts, expenseRatio, revenueChange, expenseChange, alertCount, startDate, endDate, setStartDate, setEndDate, onAsk, onKnowledge } = props;
+  const { loading, currency, metrics, months, balance, businessCounts, expenseRatio, revenueChange, expenseChange, alertCount, startDate, endDate, setStartDate, setEndDate, onAsk, onIntelligence, onKnowledge } = props;
   const chartData = months.map((month) => ({
     label: monthLabel(month.month),
     revenue: numberValue(month.net_revenue),
@@ -347,9 +349,9 @@ function OverviewPage(props: OverviewProps) {
       <div className="date-filter"><div className="date-field"><label htmlFor="start-date">FROM</label><input id="start-date" type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} max={endDate} /></div><span className="date-separator">to</span><div className="date-field"><label htmlFor="end-date">TO</label><input id="end-date" type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} min={startDate} /></div><span className="filter-icon"><Filter size={15} /></span></div>
     </div>
 
-    <div className="insight-banner"><div className="insight-icon"><Sparkles size={18} /></div><div className="insight-copy"><strong>Your AI business analyst is ready.</strong><span>Ask questions across your financial ledger, operations and uploaded company documents.</span></div><button className="banner-action" onClick={onAsk}>Ask ProfitPulse <ArrowRight size={15} /></button></div>
+    <div className="insight-banner"><div className="insight-icon"><Sparkles size={18} /></div><div className="insight-copy"><strong>Two specialist agents. One business briefing.</strong><span>The Data Analyst verifies the numbers. The Business Analyst turns findings into practical priorities.</span><span className="demo-data-note">Manufacturing-focused preview using synthetic wholesale/retail sample records. Production and machine telemetry are not connected.</span></div><button className="banner-action" onClick={onIntelligence}>Run intelligence workflow <ArrowRight size={15} /></button><button className="text-action overview-chat-action" onClick={onAsk}>Ask a question</button></div>
 
-    <div className="section-heading"><div><h2>Performance snapshot</h2><span>Selected reporting period · {new Date(`${startDate}T00:00:00`).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })} – {new Date(`${endDate}T00:00:00`).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span></div><span className="section-caption"><span className="pulse-dot" />Updated from live API</span></div>
+    <div className="section-heading"><div><h2>Performance snapshot</h2><span>Selected reporting period · {new Date(`${startDate}T00:00:00`).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })} – {new Date(`${endDate}T00:00:00`).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span></div><span className="section-caption"><span className="pulse-dot" />Synthetic sample records · API connected</span></div>
 
     <div className="metric-grid">
       <MetricCard label="Net revenue" value={formatCurrency(metrics.net_revenue, currency, true)} icon={<Wallet size={18} />} tone="blue" detail={revenueChange === null ? 'Period total' : `${revenueChange >= 0 ? '+' : ''}${revenueChange.toFixed(1)}% vs prior month`} trend={revenueChange === null ? 'neutral' : revenueChange >= 0 ? 'positive' : 'negative'} loading={loading} />
@@ -424,7 +426,7 @@ function EmptyState({ title, detail }: { title: string; detail: string }) { retu
 function PulseStat({ icon, label, value, alert = false }: { icon: ReactNode; label: string; value: string; alert?: boolean }) { return <div className="pulse-stat"><span className={`pulse-stat-icon ${alert ? 'pulse-alert' : ''}`}>{icon}</span><div><strong>{value}</strong><span>{label}</span></div></div>; }
 
 function AnalystPage() {
-  const [messages, setMessages] = useState<ChatMessage[]>([{ id: 'welcome', role: 'assistant', content: 'I’m your ProfitPulse business analyst. Ask me about revenue, margins, expenses, inventory, or your uploaded company documents. I’ll use connected tools and show the evidence behind the answer.' }]);
+  const [messages, setMessages] = useState<ChatMessage[]>([{ id: 'welcome', role: 'assistant', content: 'I’m ProfitPulse, your business intelligence assistant. Ask about revenue, margins, expenses, inventory, supply chain or your company documents. I’ll investigate with connected read-only tools and show the evidence behind the answer.' }]);
   const [question, setQuestion] = useState('');
   const [sending, setSending] = useState(false);
   const [maxToolRounds] = useState(6);
@@ -459,10 +461,10 @@ function AnalystPage() {
   };
 
   return <div className="analyst-layout">
-    <div className="page-heading"><div><div className="eyebrow">PROFITPULSE INTELLIGENCE <span className="eyebrow-line" /></div><h1>Ask better business questions.</h1><p>Your AI analyst can investigate structured data and retrieve evidence from your company documents.</p></div></div>
+    <div className="page-heading"><div><div className="eyebrow">PROFITPULSE INTELLIGENCE <span className="eyebrow-line" /></div><h1>Ask better business questions.</h1><p>Ask questions across financial performance, inventory, supply chain and your company knowledge base.</p></div></div>
     <div className="analyst-workspace">
       <div className="chat-column">
-        <div className="chat-header"><div className="chat-agent-icon"><Bot size={21} /></div><div><strong>ProfitPulse Business Analyst</strong><span><i className="online-dot" /> Groq · LangGraph tool-calling</span></div><span className="chat-secure"><ShieldCheck size={14} /> Read-only tools</span></div>
+        <div className="chat-header"><div className="chat-agent-icon"><Bot size={21} /></div><div><strong>ProfitPulse Assistant</strong><span><i className="online-dot" /> Groq · LangGraph tool-calling</span></div><span className="chat-secure"><ShieldCheck size={14} /> Read-only tools</span></div>
         <div className="chat-messages">
           {messages.map((message) => <div key={message.id} className={`message-row ${message.role === 'user' ? 'message-user' : ''}`}>
             {message.role === 'assistant' && <div className="message-avatar"><Sparkles size={15} /></div>}
@@ -538,6 +540,7 @@ function KnowledgePage({ documents, onRefresh, onNotice }: { documents: Knowledg
     <input ref={fileRef} className="visually-hidden" type="file" accept=".pdf,.txt,.md,.markdown,.csv" onChange={(event) => void upload(event.target.files?.[0])} />
     {error && <div className="alert alert-warning"><CircleHelp size={16} /><span>{error}</span><button onClick={() => setError('')}><X size={14} /></button></div>}
     <div className="knowledge-stats"><div className="knowledge-stat"><span className="knowledge-stat-icon"><FileText size={18} /></span><div><strong>{documents.length}</strong><span>Indexed documents</span></div></div><div className="knowledge-stat"><span className="knowledge-stat-icon"><Database size={18} /></span><div><strong>{documents.reduce((sum, item) => sum + numberValue(item.chunk_count), 0)}</strong><span>Searchable chunks</span></div></div><div className="knowledge-stat"><span className="knowledge-stat-icon"><ShieldCheck size={18} /></span><div><strong>Isolated</strong><span>Organization scoped</span></div></div></div>
+    <div className="knowledge-footnote"><CircleHelp size={15} /><span>Files uploaded here become searchable reference material for cited document Q&A. They do not post transactions to the financial ledger. The current dashboard and Data Analyst use the synthetic demo ledger, order and inventory records.</span></div>
     <section className="panel upload-panel"><div className="upload-drop-icon"><FileUp size={24} /></div><div className="upload-copy"><h3>Build your company knowledge base</h3><p>Upload PDF, TXT, Markdown or CSV documents. Selectable text is indexed with filename and page metadata. Maximum file size: 10 MB.</p><div className="file-types"><span>PDF</span><span>TXT</span><span>MD</span><span>CSV</span></div></div><button className="secondary-button" onClick={() => fileRef.current?.click()} disabled={uploading}>{uploading ? <LoaderCircle className="spin" size={15} /> : <Plus size={15} />} Add a document</button></section>
     <section className="panel knowledge-search-panel"><div className="panel-header"><div><h3>Search company knowledge</h3><p>Find relevant passages across your uploaded documents.</p></div><span className="panel-icon"><Search size={17} /></span></div><form className="knowledge-search-form" onSubmit={search}><Search size={17} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="e.g. Who approves an unbudgeted purchase above INR 25,000?" /><button type="submit" disabled={searching || query.trim().length < 3}>{searching ? <LoaderCircle className="spin" size={15} /> : 'Search'}</button></form>
       {hits.length > 0 && <div className="search-results"><div className="result-heading">{hits.length} matching passage{hits.length === 1 ? '' : 's'}</div>{hits.map((hit) => <div className="knowledge-hit" key={hit.source.document_id + hit.source.page_number + hit.text.slice(0, 12)}><div className="hit-source"><FileText size={13} />{hit.source.citation}<span>Distance {hit.distance?.toFixed(3) ?? 'n/a'}</span></div><p>{hit.text}</p></div>)}</div>}

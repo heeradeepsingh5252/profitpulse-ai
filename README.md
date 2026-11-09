@@ -2,7 +2,7 @@
 
 **Enterprise-style business intelligence and decision-support prototype for SMEs.**
 
-ProfitPulse AI combines deterministic financial analytics, a LangGraph tool-calling agent, retrieval-augmented generation (RAG), ChromaDB, an MCP server, and a React + TypeScript dashboard. It is designed to demonstrate how a forward-deployed engineer can connect business data and company documents into a usable decision workflow.
+ProfitPulse AI combines a deterministic Data Analyst stage, a grounded Business Analyst stage, financial and operational analytics, retrieval-augmented generation (RAG), ChromaDB, an MCP server, and a React + TypeScript dashboard. It is designed to demonstrate how a forward-deployed engineer can connect business data and company documents into a usable decision workflow.
 
 > **Demo only:** The included organization and transactions are synthetic. The current `X-Organization-ID` header and fixed frontend/MCP demo tenant are development mechanisms, not production authentication. Do not connect real customer financial data or expose this stack publicly until the blockers in [`docs/deployment-readiness.md`](docs/deployment-readiness.md) are closed.
 
@@ -12,7 +12,8 @@ ProfitPulse AI combines deterministic financial analytics, a LangGraph tool-call
 - **Product and regional analytics:** sales, COGS, gross profit, units and regional performance from delivered order lines.
 - **Inventory health:** quantity on hand, inventory valuation and reorder alerts from the latest available snapshot.
 - **Supply Chain Intelligence v1:** supplier origin sites, purchase orders, inbound shipments, manually recorded milestones, ETA/delay exceptions, transit-time metrics, supplier scorecards, shipment charges and goods receipts connected to inventory movements.
-- **AI business analyst:** Groq-backed LLM with LangGraph tool orchestration over predefined, read-only financial, operational, supply-chain and knowledge tools.
+- **Two-stage intelligence workflow:** deterministic AI Data Analyst findings are handed to a Groq-backed LangGraph AI Business Analyst for grounded business interpretation and recommendations.
+- **Hybrid customer experience:** performance dashboard, AI Intelligence workflow with evidence/recommendations, and a single Ask ProfitPulse conversational interface.
 - **Company knowledge base:** PDF, TXT, Markdown and CSV ingestion; page-aware chunking; ChromaDB semantic search; filename/page citations; organization metadata filters; configurable cosine-distance cutoff.
 - **MCP server:** Streamable HTTP tools for knowledge search, monthly financial trends and read-only supply-chain visibility.
 - **Custom dashboard:** React, TypeScript, Vite, Recharts and Nginx with a same-origin proxy to FastAPI.
@@ -170,7 +171,7 @@ See [`docs/qa-report.md`](docs/qa-report.md) for detailed test evidence and impo
 .
 ├── backend/
 │   ├── src/profitpulse/
-│   │   ├── agent/          # LangGraph graph, prompts, LLM and tools
+│   │   ├── agent/          # LangGraph roles, two-stage workflow, prompts, LLM and tools
 │   │   ├── rag/            # Chroma store and document chunking
 │   │   ├── ingestion/      # CSV parsing/import
 │   │   ├── routers/        # FastAPI endpoints
@@ -182,7 +183,7 @@ See [`docs/qa-report.md`](docs/qa-report.md) for detailed test evidence and impo
 │   ├── Dockerfile
 │   └── requirements.txt
 ├── database/init/          # Schema, roles and synthetic seed data
-├── docs/                   # Architecture, QA, security and deployment notes
+├── docs/                   # Architecture, SaaS design, QA, security and deployment notes
 ├── examples/               # Synthetic CSVs and policy document
 ├── frontend/               # React + TypeScript + Vite + Nginx
 └── docker-compose.yml

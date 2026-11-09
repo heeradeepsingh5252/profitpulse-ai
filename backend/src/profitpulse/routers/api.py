@@ -49,6 +49,19 @@ class AgentAskRequest(BaseModel):
     max_tool_rounds: int = Field(default=6, ge=1, le=8)
 
 
+class TwoAgentAnalysisRequest(BaseModel):
+    question: str = Field(default="Review the manufacturing business performance and identify the most important actions.", min_length=5, max_length=3000)
+    start_date: date = Field(default=date(2026, 8, 1))
+    end_date: date = Field(default=date(2026, 10, 31))
+    max_tool_rounds: int = Field(default=6, ge=1, le=8)
+
+    @model_validator(mode="after")
+    def validate_period(self):
+        if self.end_date < self.start_date:
+            raise ValueError("end_date must be on or after start_date")
+        return self
+
+
 class SupplierSiteRequest(BaseModel):
     site_code: str = Field(min_length=2, max_length=40)
     site_name: str = Field(min_length=2, max_length=160)
@@ -252,6 +265,33 @@ def ask_business_analyst(
     except AgentExecutionError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
     return {"organization_id": org_id, **result}
+
+
+@router.post("/intelligence/analyse")
+def two_agent_intelligence(
+    payload: TwoAgentAnalysisRequest,
+    org_id: str = Depends(tenant_id),
+):
+    """Run the deterministic Data Analyst stage, then grounded Business Analyst reasoning."""
+    from profitpulse.agent.two_agent import run_two_agent_analysis
+
+    try:
+        return {
+            "organization_id": org_id,
+            **run_two_agent_analysis(
+                question=payload.question.strip(),
+                organization_id=org_id,
+                start_date=payload.start_date,
+                end_date=payload.end_date,
+                max_tool_rounds=payload.max_tool_rounds,
+            ),
+        }
+    except LLMConfigurationError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except AgentExecutionError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
 def organization_currency(conn, organization_id: str) -> str:
